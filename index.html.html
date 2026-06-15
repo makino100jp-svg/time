@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>時間ゲーム</title>
+
+<style>
+
+body{
+    font-family:sans-serif;
+    text-align:center;
+    background:#f5f7fb;
+}
+
+h1{
+    color:#345;
+}
+
+#question{
+    font-size:28px;
+    background:#e8f0fe;
+    display:inline-block;
+    padding:15px 30px;
+    border-radius:12px;
+    margin:10px;
+}
+
+.smile-sun-area{
+    margin:10px;
+}
+
+#stageDisplay{
+    font-size:20px;
+    font-weight:bold;
+    color:#345;
+    margin-bottom:4px;
+}
+
+#smileSunCount{
+    font-size:20px;
+    font-weight:bold;
+    color:#345;
+}
+
+.smile-sun-icons{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:2px;
+    margin-top:8px;
+    max-width:600px;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+.smile-sun-icon{
+    font-size:28px;
+    line-height:1;
+}
+
+.clock-area{
+    display:flex;
+    justify-content:space-around;
+    align-items:flex-start;
+    margin:20px;
+    flex-wrap:wrap;
+    gap:20px;
+}
+
+.clock-box{
+    position:relative;
+}
+
+.clock-label{
+    font-size:20px;
+    font-weight:bold;
+    color:#345;
+    margin-bottom:6px;
+}
+
+.clock-status{
+    font-size:15px;
+    color:#777;
+    margin-top:6px;
+    min-height:20px;
+}
+
+canvas{
+    background:white;
+    border-radius:50%;
+    box-shadow:0 0 10px #aaa;
+    touch-action:none;
+}
+
+canvas.fixed{
+    opacity:0.8;
+}
+
+.numberline-area{
+    width:85%;
+    max-width:520px;
+    margin:25px auto;
+}
+
+.moved-time{
+    font-size:18px;
+    font-weight:bold;
+    color:#4285f4;
+    margin-bottom:2px;
+    min-height:24px;
+}
+
+.final-total{
+    font-size:32px;
+    font-weight:bold;
+    color:#ea4335;
+    margin:10px 0;
+}
+
+.numberline-track{
+    position:relative;
+    height:6px;
+    background:#ddd;
+    border-radius:3px;
+    margin:22px 0 8px;
+}
+
+.numberline-center{
+    position:absolute;
+    left:50%;
+    top:-10px;
+    width:4px;
+    height:26px;
+    background:#888;
+    transform:translateX(-50%);
+    border-radius:2px;
+}
+
+.numberline-fill{
+    position:absolute;
+    top:0;
+    height:6px;
+    background:#4285f4;
+    border-radius:3px;
+    width:0;
+    left:50%;
+}
+
+.numberline-arrowhead{
+    position:absolute;
+    top:-16px;
+    font-size:24px;
+    color:#4285f4;
+    transform:translateX(-50%);
+    left:50%;
+}
+
+.numberline-labels{
+    display:flex;
+    justify-content:space-between;
+    font-size:15px;
+    color:#777;
+    padding:0 4px;
+}
+
+.numberline-labels .center-label{
+    color:#aaa;
+}
+
+.answer-input{
+    font-size:24px;
+    margin:15px;
+}
+
+.answer-input input{
+    font-size:24px;
+    width:60px;
+    text-align:center;
+    border:2px solid #4285f4;
+    border-radius:8px;
+    padding:6px;
+    margin:0 4px;
+}
+
+.hint{
+    margin:15px auto;
+    max-width:480px;
+    padding:12px 18px;
+    background:#e6f4ea;
+    border:2px dashed #34a853;
+    border-radius:10px;
+    font-size:18px;
+    color:#1e4620;
+}
+
+button{
+    font-size:18px;
+    padding:10px;
+    margin:5px;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+.ai{
+    margin:20px;
+    padding:15px;
+    background:#fff3cd;
+    border-radius:10px;
+}
+
+.correct-overlay{
+    position:fixed;
+    top:0;left:0;right:0;bottom:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+    z-index:999;
+}
+
+.correct-overlay .circle{
+    font-size:220px;
+    color:#ea4335;
+    font-weight:bold;
+    opacity:0;
+    transform:scale(0.3);
+}
+
+.correct-overlay.show .circle{
+    animation: popCircle 1.2s ease-out forwards;
+}
+
+@keyframes popCircle{
+    0%   { opacity:0; transform:scale(0.3) rotate(-15deg); }
+    30%  { opacity:1; transform:scale(1.3) rotate(8deg); }
+    50%  { opacity:1; transform:scale(1.0) rotate(-4deg); }
+    70%  { opacity:1; transform:scale(1.1) rotate(2deg); }
+    100% { opacity:0; transform:scale(1.0) rotate(0deg); }
+}
+
+.confetti{
+    position:absolute;
+    top:-20px;
+    width:12px;
+    height:12px;
+    border-radius:2px;
+    animation: fall 1.4s ease-in forwards;
+}
+
+@keyframes fall{
+    0%   { transform:translateY(0) rotate(0deg); opacity:1; }
+    100% { transform:translateY(110vh) rotate(720deg); opacity:0; }
+}
+
+</style>
+</head>
+
+
+<body>
+
+
+<h1>⭐ 時間ゲーム</h1>
+
+<h2 id="question">
+問題を作っています…
+</h2>
+
+
+<div class="smile-sun-area">
+<div id="stageDisplay">🐭 ねずみステージ　（0/5問）</div>
+<div id="smileSunCount">😄 スマイルサン：0個</div>
+<div class="smile-sun-icons" id="smileSunIcons"></div>
+</div>
+
+
+
+<div class="clock-area">
+
+
+<div class="clock-box">
+<div class="clock-label">過去</div>
+<canvas id="startClock" width="220" height="220"></canvas>
+<div class="clock-status" id="leftStatus"></div>
+</div>
+
+
+<div class="clock-box">
+<div class="clock-label">未来</div>
+<canvas id="endClock" width="220" height="220"></canvas>
+<div class="clock-status" id="rightStatus"></div>
+</div>
+
+
+</div>
+
+
+
+<div class="numberline-area">
+<div class="moved-time" id="movedTime">動かした時間：0時間0分</div>
+<div class="numberline-track">
+<div class="numberline-center"></div>
+<div class="numberline-fill" id="numberlineFill"></div>
+<div class="numberline-arrowhead" id="numberlineArrowhead"></div>
+</div>
+<div class="numberline-labels">
+<span>◀ 過去</span>
+<span class="center-label">ここから</span>
+<span>未来 ▶</span>
+</div>
+</div>
+
+
+
+<div class="answer-input">
+答え：
+<input type="number" id="answerHour" min="0" max="23" placeholder="時">時
+<input type="number" id="answerMinute" min="0" max="59" placeholder="分">分
+</div>
+
+
+<div class="hint" id="hint" style="display:none;"></div>
+
+
+<br>
+
+
+<button onclick="showHint()" id="hintButton">
+💡 ヒント
+</button>
+
+<button onclick="checkAnswer()" id="checkButton">
+答え合わせ
+</button>
+
+<button onclick="restartGame()" id="restartButton" style="display:none;">
+🔄 もう一度挑戦する
+</button>
+
+
+
+<div class="ai" id="ai">
+🐭 ねずみ先生：<br>
+「ヒントを見ながら、動かす時計の針を考えてみよう！」
+</div>
+
+
+<div class="correct-overlay" id="correctOverlay">
+<div class="circle">⭕️</div>
+</div>
+
+
+
+<script>
+
+
+// ステージ（干支）の一覧
+const ZODIAC = [
+    {emoji:"🐭", name:"ねずみ"},
+    {emoji:"🐮", name:"うし"},
+    {emoji:"🐯", name:"とら"},
+    {emoji:"🐰", name:"うさぎ"},
+    {emoji:"🐲", name:"たつ"},
+    {emoji:"🐍", name:"へび"},
+    {emoji:"🐴", name:"うま"},
+    {emoji:"🐑", name:"ひつじ"},
+    {emoji:"🐵", name:"さる"},
+    {emoji:"🐔", name:"とり"},
+    {emoji:"🐶", name:"いぬ"},
+    {emoji:"🐗", name:"いのしし"}
+];
+
+const QUESTIONS_PER_STAGE = 5;
+
+
+// ------------------
+// 状態管理
+// ------------------
+
+let baseMinutes;       // 問題に出てくる基準の時刻（分）
+let diffHour;
+let diffMinute;
+let diff;               // diffHour*60+diffMinute
+let before;             // true: 「○時間○分前」の問題 / false: 「○時間○分後」の問題
+
+let correctMinutes;     // 正解の時刻（分）
+
+let leftMinutes;        // 左（過去）の時計の現在値
+let rightMinutes;       // 右（未来）の時計の現在値
+
+let handDragged=false;     // この問題で時計を操作したか
+let hasWrongAttempt=false; // この問題で一度でも間違えたか
+
+let totalSmileSuns=0;      // 獲得したスマイルサンの合計
+
+let currentStage=0;        // 現在のステージ（0〜11、ZODIACのインデックス）
+let stageProgress=0;       // 現在のステージで正解した数（0〜5）
+let stageSmileSuns=0;       // 現在のステージで獲得したスマイルサン
+
+let gameCompleted=false;   // 全ステージクリアしたか
+
+
+
+const startCanvas =
+document.getElementById("startClock");
+
+
+const endCanvas =
+document.getElementById("endClock");
+
+
+const CENTER = 110;
+const RADIUS = 100;
+
+
+
+// ------------------
+// ユーティリティ
+// ------------------
+
+
+function norm(min){
+    return ((min%1440)+1440)%1440;
+}
+
+
+function formatTime(min){
+
+    min=norm(min);
+
+    let h=Math.floor(min/60);
+    let m=min%60;
+
+    let ampm = h<12 ? "午前":"午後";
+
+    let display=h;
+
+    if(display===0) display=12;
+    if(display>12) display-=12;
+
+    return `${ampm}${display}時${m}分`;
+
+}
+
+
+// 現在のステージの干支キャラクターの呼び名（例：「🐭 ねずみ先生」）
+function aiName(){
+    let z=ZODIAC[currentStage];
+    return `${z.emoji} ${z.name}先生`;
+}
+
+
+// ステージ表示を更新
+function updateStageDisplay(){
+    let z=ZODIAC[currentStage];
+    document.getElementById("stageDisplay").innerHTML =
+    `${z.emoji} ${z.name}ステージ　（${stageProgress}/${QUESTIONS_PER_STAGE}問）`;
+}
+
+
+
+// ------------------
+// 問題生成
+// ------------------
+
+function createProblem(){
+
+
+    let hour = Math.floor(Math.random()*12)+6;
+
+    let minute = Math.floor(Math.random()*6)*10;
+
+    baseMinutes = hour*60+minute;
+
+
+    diffHour = Math.floor(Math.random()*8)+1;
+
+    diffMinute = Math.floor(Math.random()*6)*10;
+
+    diff = diffHour*60+diffMinute;
+
+    if(diff===0){
+        diff=60;
+        diffHour=1;
+        diffMinute=0;
+    }
+
+
+    before = Math.random()<0.5;
+
+
+    if(before){
+
+        correctMinutes = norm(baseMinutes-diff);
+
+        document.getElementById("question").innerHTML =
+        `${formatTime(baseMinutes)}の${diffHour}時間${diffMinute}分前の時刻は？`;
+
+    }else{
+
+        correctMinutes = norm(baseMinutes+diff);
+
+        document.getElementById("question").innerHTML =
+        `${formatTime(baseMinutes)}の${diffHour}時間${diffMinute}分後の時刻は？`;
+    }
+
+
+    // 両方の時計は、まず問題と同じ時刻からスタートする
+    leftMinutes = baseMinutes;
+    rightMinutes = baseMinutes;
+
+
+    handDragged=false;
+    hasWrongAttempt=false;
+
+
+    // 答え欄をクリア
+    document.getElementById("answerHour").value="";
+    document.getElementById("answerMinute").value="";
+
+
+    // ヒントを隠す
+    let hintBox=document.getElementById("hint");
+    hintBox.style.display="none";
+    hintBox.innerHTML="";
+
+
+    // どちらの時計を操作するかの表示を更新
+    if(before){
+
+        document.getElementById("leftStatus").innerHTML =
+        "👆 動かして答えを見つけよう";
+
+        document.getElementById("rightStatus").innerHTML =
+        "🔒 この時刻で固定";
+
+        startCanvas.classList.remove("fixed");
+        endCanvas.classList.add("fixed");
+
+    }else{
+
+        document.getElementById("leftStatus").innerHTML =
+        "🔒 この時刻で固定";
+
+        document.getElementById("rightStatus").innerHTML =
+        "👆 動かして答えを見つけよう";
+
+        startCanvas.classList.add("fixed");
+        endCanvas.classList.remove("fixed");
+    }
+
+
+    document.getElementById("ai").innerHTML =
+    `${aiName()}：<br>「ヒントを見ながら、動かす時計の針を考えてみよう！」`;
+
+    updateStageDisplay();
+
+}
+
+
+
+
+// ------------------
+// 時計描画
+// ------------------
+
+
+function drawClock(canvas,minutes){
+
+
+let ctx=canvas.getContext("2d");
+
+
+ctx.clearRect(0,0,220,220);
+
+
+// 外枠（黄色の輪）
+ctx.beginPath();
+ctx.arc(CENTER,CENTER,RADIUS,0,Math.PI*2);
+ctx.lineWidth=14;
+ctx.strokeStyle="#f4c542";
+ctx.stroke();
+
+
+// 文字盤の数字
+ctx.fillStyle="#333";
+ctx.font="bold 18px sans-serif";
+ctx.textAlign="center";
+ctx.textBaseline="middle";
+
+for(let n=1;n<=12;n++){
+    let ang=(n/12)*Math.PI*2 - Math.PI/2;
+    let nx=CENTER+Math.cos(ang)*(RADIUS-22);
+    let ny=CENTER+Math.sin(ang)*(RADIUS-22);
+    ctx.fillText(n,nx,ny);
+}
+
+
+// 目盛り
+for(let n=0;n<60;n++){
+    let ang=(n/60)*Math.PI*2 - Math.PI/2;
+    let inner = n%5===0 ? RADIUS-12 : RADIUS-6;
+    let x1=CENTER+Math.cos(ang)*inner;
+    let y1=CENTER+Math.sin(ang)*inner;
+    let x2=CENTER+Math.cos(ang)*(RADIUS-2);
+    let y2=CENTER+Math.sin(ang)*(RADIUS-2);
+    ctx.beginPath();
+    ctx.moveTo(x1,y1);
+    ctx.lineTo(x2,y2);
+    ctx.lineWidth = n%5===0 ? 2 : 1;
+    ctx.strokeStyle="#999";
+    ctx.stroke();
+}
+
+
+
+let hour=(minutes/60)%12;
+
+let minute=((minutes%60)+60)%60;
+
+
+// 長針（分）-青
+drawHand(
+ctx,
+minute*6,
+RADIUS-25,
+6,
+"#4285f4"
+);
+
+
+// 短針（時）-赤
+drawHand(
+ctx,
+hour*30+minute*0.5,
+RADIUS-50,
+8,
+"#ea4335"
+);
+
+
+// 中心の点
+ctx.beginPath();
+ctx.arc(CENTER,CENTER,6,0,Math.PI*2);
+ctx.fillStyle="#333";
+ctx.fill();
+
+
+}
+
+
+
+
+function drawHand(ctx,deg,length,width,color){
+
+
+let rad=(deg-90)*Math.PI/180;
+
+
+ctx.lineWidth=width;
+ctx.lineCap="round";
+ctx.strokeStyle=color;
+
+
+ctx.beginPath();
+
+
+ctx.moveTo(CENTER,CENTER);
+
+
+ctx.lineTo(
+CENTER+Math.cos(rad)*length,
+CENTER+Math.sin(rad)*length
+);
+
+
+ctx.stroke();
+
+}
+
+
+
+// ------------------
+// 数直線の更新
+// ------------------
+
+
+function updateNumberLine(){
+
+
+    // 操作する側（前の問題なら左＝過去、後の問題なら右＝未来）
+    let operatedMinutes = before ? leftMinutes : rightMinutes;
+
+
+    let offset = operatedMinutes - baseMinutes;
+
+    if(offset>720) offset-=1440;
+    if(offset<-720) offset+=1440;
+
+
+    // 数直線が表す範囲（中心から左右に diff+60 分まで）
+    let range = diff+60;
+
+
+    let halfPercent =
+    Math.min(50,(Math.abs(offset)/range)*50);
+
+
+    let fill=document.getElementById("numberlineFill");
+
+    let arrowhead=document.getElementById("numberlineArrowhead");
+
+
+    if(offset>=0){
+
+        fill.style.left="50%";
+        fill.style.width=halfPercent+"%";
+
+        arrowhead.style.left=(50+halfPercent)+"%";
+        arrowhead.textContent = halfPercent>1 ? "▶" : "";
+
+    }else{
+
+        fill.style.left=(50-halfPercent)+"%";
+        fill.style.width=halfPercent+"%";
+
+        arrowhead.style.left=(50-halfPercent)+"%";
+        arrowhead.textContent = halfPercent>1 ? "◀" : "";
+
+    }
+
+
+    // 動かした時間の表示
+    let absOffset = Math.abs(offset);
+
+    let mh = Math.floor(absOffset/60);
+    let mm = absOffset%60;
+
+    let movedText;
+
+    if(offset===0){
+        movedText = "動かした時間：0時間0分";
+    }else if(offset<0){
+        movedText = `動かした時間：${mh}時間${mm}分　戻した`;
+    }else{
+        movedText = `動かした時間：${mh}時間${mm}分　進めた`;
+    }
+
+    document.getElementById("movedTime").innerHTML = movedText;
+
+
+}
+
+
+
+// ------------------
+// 表示更新
+// ------------------
+
+
+function update(){
+
+    drawClock(startCanvas,leftMinutes);
+
+    drawClock(endCanvas,rightMinutes);
+
+    updateNumberLine();
+
+}
+
+
+
+
+// ------------------
+// ドラッグ操作
+// ------------------
+
+
+function setupDrag(canvas,getMinutes,setMinutes,isEnabled){
+
+
+let dragging=false;
+
+let lastAngle=null;
+
+let floatMinutes=null;
+
+
+function angleFromEvent(evt){
+
+    let rect=canvas.getBoundingClientRect();
+
+    let clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    let clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+
+    let x = clientX-rect.left - CENTER*(rect.width/220);
+    let y = clientY-rect.top  - CENTER*(rect.height/220);
+
+    let ang = Math.atan2(y,x)*180/Math.PI + 90;
+
+    if(ang<0) ang+=360;
+
+    return ang;
+}
+
+
+function onStart(evt){
+
+    if(!isEnabled()) return;
+
+    evt.preventDefault();
+
+    dragging=true;
+
+    lastAngle=angleFromEvent(evt);
+
+    floatMinutes=getMinutes();
+}
+
+
+function onMove(evt){
+
+    if(!dragging) return;
+
+    if(!isEnabled()){
+        dragging=false;
+        lastAngle=null;
+        floatMinutes=null;
+        return;
+    }
+
+    evt.preventDefault();
+
+    let ang=angleFromEvent(evt);
+
+
+    // 前回からの回転量（-180〜180度の範囲に正規化）
+    let delta = ang-lastAngle;
+
+    if(delta>180) delta-=360;
+    if(delta<-180) delta+=360;
+
+
+    // 長針：6度=1分。長針が1周（360度）すると短針も1時間進む
+    floatMinutes += delta/6;
+
+    lastAngle = ang;
+
+
+    let newMinutes = Math.round(floatMinutes);
+
+    if(newMinutes!==getMinutes()){
+        handDragged=true;
+    }
+
+    setMinutes(newMinutes);
+
+
+    update();
+
+}
+
+
+function onEnd(evt){
+    dragging=false;
+    lastAngle=null;
+    floatMinutes=null;
+}
+
+
+canvas.addEventListener("mousedown",onStart);
+canvas.addEventListener("mousemove",onMove);
+canvas.addEventListener("mouseup",onEnd);
+canvas.addEventListener("mouseleave",onEnd);
+
+canvas.addEventListener("touchstart",onStart,{passive:false});
+canvas.addEventListener("touchmove",onMove,{passive:false});
+canvas.addEventListener("touchend",onEnd);
+
+
+}
+
+
+
+// 左（過去）の時計：「前」の問題のときだけ操作できる
+setupDrag(
+    startCanvas,
+    ()=>leftMinutes,
+    (v)=>{ leftMinutes=norm(v); },
+    ()=>before
+);
+
+
+// 右（未来）の時計：「後」の問題のときだけ操作できる
+setupDrag(
+    endCanvas,
+    ()=>rightMinutes,
+    (v)=>{ rightMinutes=norm(v); },
+    ()=>!before
+);
+
+
+
+// ------------------
+// ヒント
+// ------------------
+
+
+function getHintText(){
+
+    let intermediate;
+
+    if(before){
+
+        intermediate = norm(baseMinutes - diffHour*60);
+
+        if(diffMinute===0){
+            return `${diffHour}時間戻すと${formatTime(intermediate)}だね。これが答えだよ！`;
+        }
+
+        return `まず、${diffHour}時間戻して${formatTime(intermediate)}だね。次に、${diffMinute}分戻すとどうなるかな？`;
+
+    }else{
+
+        intermediate = norm(baseMinutes + diffHour*60);
+
+        if(diffMinute===0){
+            return `${diffHour}時間進めると${formatTime(intermediate)}だね。これが答えだよ！`;
+        }
+
+        return `まず、${diffHour}時間進めて${formatTime(intermediate)}だね。次に、${diffMinute}分進めるとどうなるかな？`;
+    }
+
+}
+
+
+function showHint(){
+
+    let hintBox=document.getElementById("hint");
+
+    let z=ZODIAC[currentStage];
+
+    hintBox.innerHTML = `${z.emoji} ヒント：` + getHintText();
+
+    hintBox.style.display="block";
+
+}
+
+
+
+// ------------------
+// スマイルサン表示
+// ------------------
+
+
+function updateSmileSunDisplay(){
+
+    document.getElementById("smileSunCount").innerHTML =
+    `😄 スマイルサン：${totalSmileSuns}個`;
+
+
+    let icons=document.getElementById("smileSunIcons");
+
+    let html="";
+
+    for(let i=0;i<totalSmileSuns;i++){
+        html += `<span class="smile-sun-icon">😄</span>`;
+    }
+
+    icons.innerHTML=html;
+
+}
+
+
+
+// ------------------
+// 正解エフェクト
+// ------------------
+
+
+function spawnConfetti(){
+
+    let colors=["#ea4335","#4285f4","#fbbc04","#34a853","#ff6d01","#a142f4"];
+
+    for(let i=0;i<60;i++){
+
+        let c=document.createElement("div");
+        c.className="confetti";
+
+        c.style.left = Math.random()*100+"vw";
+        c.style.background = colors[Math.floor(Math.random()*colors.length)];
+        c.style.animationDelay = (Math.random()*0.4)+"s";
+        c.style.width = c.style.height = (6+Math.random()*10)+"px";
+
+        document.body.appendChild(c);
+
+        setTimeout(()=>{ c.remove(); },2000);
+
+    }
+
+}
+
+
+function showCorrectMark(){
+
+    let overlay=document.getElementById("correctOverlay");
+
+    overlay.classList.remove("show");
+
+    // 再生のためいったんリフローさせる
+    void overlay.offsetWidth;
+
+    overlay.classList.add("show");
+
+    spawnConfetti();
+
+    setTimeout(()=>{ overlay.classList.remove("show"); },1300);
+
+}
+
+
+
+// ------------------
+// 答え合わせ
+// ------------------
+
+
+function checkAnswer(){
+
+if(gameCompleted) return;
+
+let ai=document.getElementById("ai");
+
+let ahInput=document.getElementById("answerHour");
+let amInput=document.getElementById("answerMinute");
+
+let ah=ahInput.value;
+let am=amInput.value;
+
+
+if(ah===""||am===""){
+
+    ai.innerHTML=
+    `
+    ${aiName()}：<br>
+    時と分の両方を入力してね。
+    `;
+
+    return;
+}
+
+
+ah=parseInt(ah,10);
+am=parseInt(am,10);
+
+
+if(isNaN(ah)||isNaN(am)||am<0||am>59||ah<0||ah>23){
+
+    ai.innerHTML=
+    `
+    ${aiName()}：<br>
+    時は0〜23、分は0〜59の数字で入力してね。
+    `;
+
+    return;
+}
+
+
+// correctMinutes は 0-1439（24時間表記）
+// 入力は 0-23時 として比較（12時間/24時間どちらでもOKにするため
+// 入力値とその+12時間の両方をチェックする）
+let inputMinutes = ah*60+am;
+
+let isCorrect =
+    inputMinutes===correctMinutes ||
+    ((inputMinutes+720)%1440)===correctMinutes;
+
+
+if(isCorrect){
+
+    // 操作なし＆一度も間違えていない → 2スマイルサン
+    // それ以外（時計を操作した、または間違えた後の正解）→ 1スマイルサン
+    let gained = (!handDragged && !hasWrongAttempt) ? 2 : 1;
+
+    totalSmileSuns += gained;
+    stageSmileSuns += gained;
+    stageProgress += 1;
+
+    updateSmileSunDisplay();
+
+
+    let reasonText = (gained===2)
+        ? "時計を使わずに計算で解けたね！スマイルサン2個ゲット！"
+        : "正解できたね！スマイルサン1個ゲット！";
+
+
+    let z=ZODIAC[currentStage];
+
+    showCorrectMark();
+
+    document.querySelectorAll("button")
+    .forEach(b=>b.disabled=true);
+
+
+    if(stageProgress >= QUESTIONS_PER_STAGE){
+
+        // ステージクリア！
+        document.getElementById("stageDisplay").innerHTML =
+        `${z.emoji} ${z.name}ステージ　クリア！🎉`;
+
+
+        if(currentStage === ZODIAC.length-1){
+
+            // 最後のステージ（🐗）をクリア → ゲーム終了
+            ai.innerHTML=
+            `
+            ${aiName()}：
+            正解！すごい！⭐<br>
+            ${reasonText}<br>
+            ${stageSmileSuns}スマイルサンGET！がんばってるね！<br><br>
+            🎉 全${ZODIAC.length}ステージクリア！🎉<br>
+            <span class="final-total">合計スマイルサン：${totalSmileSuns}個</span>
+            `;
+
+            setTimeout(()=>{
+                finishGame();
+            },2400);
+
+        }else{
+
+            ai.innerHTML=
+            `
+            ${aiName()}：
+            正解！すごい！⭐<br>
+            ${reasonText}<br>
+            ${stageSmileSuns}スマイルサンGET！がんばってるね！<br>
+            次のステージに進もう！
+            `;
+
+            setTimeout(()=>{
+
+                currentStage += 1;
+                stageProgress=0;
+                stageSmileSuns=0;
+
+                createProblem();
+                update();
+
+                document.querySelectorAll("button")
+                .forEach(b=>b.disabled=false);
+
+            },2400);
+
+        }
+
+
+    }else{
+
+        // 通常の正解（ステージ継続）
+        ai.innerHTML=
+        `
+        ${aiName()}：
+        正解！すごい！⭐<br>
+        ${reasonText}<br>
+        次の問題に進もう！
+        `;
+
+        updateStageDisplay();
+
+        setTimeout(()=>{
+
+            createProblem();
+            update();
+
+            document.querySelectorAll("button")
+            .forEach(b=>b.disabled=false);
+
+        },1800);
+
+    }
+
+
+}else{
+
+    hasWrongAttempt=true;
+
+    ai.innerHTML=
+    `
+    ${aiName()}：<br>
+    残念、もう一回考えてみよう。<br>
+    「ヒント」を見てもいいよ。
+    `;
+
+}
+
+}
+
+
+
+// ------------------
+// ゲーム終了・リスタート
+// ------------------
+
+
+function finishGame(){
+
+    gameCompleted=true;
+
+    document.getElementById("question").innerHTML =
+    "🎉 全ステージクリア！🎉";
+
+    document.querySelector(".answer-input").style.display="none";
+
+    document.getElementById("hint").style.display="none";
+
+    document.getElementById("hintButton").style.display="none";
+    document.getElementById("checkButton").style.display="none";
+
+    document.getElementById("restartButton").style.display="inline-block";
+    document.getElementById("restartButton").disabled=false;
+
+}
+
+
+function restartGame(){
+
+    gameCompleted=false;
+
+    currentStage=0;
+    stageProgress=0;
+    stageSmileSuns=0;
+    totalSmileSuns=0;
+
+    updateSmileSunDisplay();
+
+
+    document.querySelector(".answer-input").style.display="block";
+
+    document.getElementById("hintButton").style.display="inline-block";
+    document.getElementById("checkButton").style.display="inline-block";
+    document.getElementById("restartButton").style.display="none";
+
+    document.querySelectorAll("button")
+    .forEach(b=>b.disabled=false);
+
+
+    createProblem();
+    update();
+
+}
+
+
+
+
+createProblem();
+
+update();
+
+updateSmileSunDisplay();
+
+
+
+</script>
+
+
+</body>
+</html>
